@@ -8,7 +8,7 @@ object MainKt {
 
     @Throws(IOException::class, InterruptedException::class)
     @JvmStatic
-    fun main(args: Array<String>) {
+    fun mainOld(args: Array<String>) {
         val pb = ProcessBuilder("ffmpeg", "-i", "http://10.8.0.3/live.m3u8", "-acodec", "copy", "-vcodec", "copy", "-f", "avi", "-bsf:v", "h264_mp4toannexb", "-")
         val p = pb.start()
 
