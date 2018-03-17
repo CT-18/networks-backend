@@ -8,7 +8,7 @@ import ru.ifmo.networks.common.handlers.HandlerWorker
 import ru.ifmo.networks.slave.SlaveHandlerWorker
 
 
-@SpringBootApplication(scanBasePackages = ["ru.ifmo.networks"])
+@SpringBootApplication(scanBasePackages = ["ru.ifmo.networks.common"])
 class NetworksApplication
 
 

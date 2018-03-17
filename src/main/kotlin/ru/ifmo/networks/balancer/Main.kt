@@ -1,4 +1,4 @@
-package ru.ifmo.networks.slave
+package ru.ifmo.networks.balancer
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
@@ -9,11 +9,10 @@ import ru.ifmo.networks.common.handlers.HandlerWorker
 import ru.ifmo.networks.master.MasterHandlerWorker
 
 
-@SpringBootApplication(scanBasePackages = ["ru.ifmo.networks.common"])
-class SlaveApplication
+@SpringBootApplication
+class BalancerApplication
 
 
 fun main(args: Array<String>) {
-    AppConfig.isSlave = true
-    runApplication<SlaveApplication>(*args)
+    runApplication<BalancerApplication>(*args)
 }
