@@ -1,6 +1,6 @@
 package ru.ifmo.networks.common
 
-data class Response<T>(
+open class Response<T>(
         val result: T?,
         val error: ErrorResponse?
 ) {
