@@ -2,18 +2,32 @@ package ru.ifmo.networks.master
 
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.web.reactive.function.BodyExtractors
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.ServerResponse.*
 import reactor.core.publisher.Mono
 import ru.ifmo.networks.common.*
 import ru.ifmo.networks.common.handlers.HandlerWorker
+import java.util.concurrent.ConcurrentHashMap
 
 class MasterHandlerWorker : HandlerWorker {
 
-    val streamsMap = mapOf(
-            "petrovich" to StreamBaseUrlAndFragment("http://10.8.0.3", "live.m3u8")
-    )
+    private val streamsMap = ConcurrentHashMap<String, StreamBaseUrlAndFragment>()
+
+    init {
+        streamsMap["petrovich"] = StreamBaseUrlAndFragment("http://10.8.0.3", "live.m3u8") // TODO: remove
+    }
+
+    override fun malinkaHeartbeat(serverRequest: ServerRequest): Mono<ServerResponse> {
+        return serverRequest.body(BodyExtractors.toMono(HeartbeatRequest::class.java))
+                .map { request ->
+                    streamsMap[request.name] = StreamBaseUrlAndFragment(request.baseUrl, request.fragment)
+                }
+                .flatMap {
+                    ok().jsonSuccess("Ok")
+                }
+    }
 
     override fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> =
             ok().jsonSuccess(StreamsResponse(
@@ -37,7 +51,6 @@ class MasterHandlerWorker : HandlerWorker {
 
         return withStreamCheck(
                 name = name,
-                fragment = fragment,
                 executor = { url ->
                     val response = MalinkaProxy(url).download(fragment)
                     ok().accessControlAllowOrigin()
@@ -51,7 +64,6 @@ class MasterHandlerWorker : HandlerWorker {
         assert(fragment.endsWith(".ts"))
         return withStreamCheck(
                 name = name,
-                fragment = fragment,
                 executor = { url ->
                     val response = MalinkaProxy(url).download(fragment)
                     ok().accessControlAllowOrigin()
@@ -63,7 +75,6 @@ class MasterHandlerWorker : HandlerWorker {
 
     private fun withStreamCheck(
             name: String,
-            fragment: String,
             executor: (String) -> Mono<ServerResponse>): Mono<ServerResponse> {
         val url = streamsMap[name]?.baseUrl ?:
                 return status(HttpStatus.NOT_FOUND)
@@ -72,5 +83,5 @@ class MasterHandlerWorker : HandlerWorker {
         return executor(url)
     }
 
-    data class StreamBaseUrlAndFragment(val baseUrl: String, val fragment: String)
+    private data class StreamBaseUrlAndFragment(val baseUrl: String, val fragment: String)
 }

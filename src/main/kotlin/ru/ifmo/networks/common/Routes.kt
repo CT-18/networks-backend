@@ -22,5 +22,9 @@ class Routes {
 
             GET("/{name}/{fragment}", handler::getFragment)
         }
+
+        "/heartbeat".nest {
+            POST("/", handler::malinkaHeartbeat)
+        }
     }
 }
