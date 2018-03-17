@@ -1,6 +1,5 @@
 package ru.ifmo.networks.slave
 
-import com.sun.security.ntlm.Server
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.server.ServerRequest
@@ -26,11 +25,11 @@ class SlaveHandlerWorker : HandlerWorker {
             val restTemplate = RestTemplate()
             val result = restTemplate.getForObject("${masterURL}/streams", SomeResponse::class.java)
             return ServerResponse.ok()
-                    .accessControlAllowOrigin()
+                    .withDefaultHeader()
                     .jsonSuccess(result.result)
         } catch (e: ResourceAccessException) {
             return ServerResponse.badRequest()
-                    .accessControlAllowOrigin()
+                    .withDefaultHeader()
                     .build()
         }
     }
@@ -52,19 +51,19 @@ class SlaveHandlerWorker : HandlerWorker {
 
         } catch (e: ResourceAccessException) {
             return ServerResponse.badRequest()
-                    .accessControlAllowOrigin()
+                    .withDefaultHeader()
                     .build()
         }
 
     }
 
-    private fun queryDataFromMaster(name : String, fragment: String) : Mono<ServerResponse> {
+    private fun queryDataFromMaster(name: String, fragment: String): Mono<ServerResponse> {
         val restTemplate = RestTemplate()
         val response = restTemplate.exchange("${masterURL}/streams/${name}/${fragment}", HttpMethod.GET, null, ByteArray::class.java)
 
         if (response.statusCode != HttpStatus.OK) {
             return ServerResponse.badRequest()
-                    .accessControlAllowOrigin()
+                    .withDefaultHeader()
                     .build()
         } else {
 
@@ -76,20 +75,20 @@ class SlaveHandlerWorker : HandlerWorker {
                 return fragmentResponse(response.body)
 
             } else {
-                return ServerResponse.ok().accessControlAllowOrigin()
+                return ServerResponse.ok().withDefaultHeader()
                         .contentType(MediaType.parseMediaType("application/vnd.apple.mpegurl"))
                         .writeByteContent(response.body)
             }
         }
     }
 
-    private fun fragmentResponse(data : ByteArray) : Mono<ServerResponse> {
-        return ServerResponse.ok().accessControlAllowOrigin()
+    private fun fragmentResponse(data: ByteArray): Mono<ServerResponse> {
+        return ServerResponse.ok().withDefaultHeader()
                 .contentType(MediaType.parseMediaType("video/mp2t"))
                 .writeByteContent(data)
     }
 
-    private fun createStorage(name : String) : Path {
+    private fun createStorage(name: String): Path {
         var path = Paths.get(name)
         if (Files.isDirectory(path)) return path
         if (!Files.exists(path)) return Files.createDirectory(path)

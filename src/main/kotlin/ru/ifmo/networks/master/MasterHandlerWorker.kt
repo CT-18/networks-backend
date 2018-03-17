@@ -30,10 +30,12 @@ class MasterHandlerWorker : HandlerWorker {
     }
 
     override fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> =
-            ok().jsonSuccess(StreamsResponse(
-                    streamsMap.toList()
-                            .map { pair -> StreamInfo(pair.first, pair.second.fragment) }
-            ))
+            ok()
+                    .withDefaultHeader()
+                    .jsonSuccess(StreamsResponse(
+                            streamsMap.toList()
+                                    .map { pair -> StreamInfo(pair.first, pair.second.fragment) }
+                    ))
 
     override fun getFragment(serverRequest: ServerRequest): Mono<ServerResponse> {
         val name = serverRequest.pathVariable("name") ?: return badRequest().build()
@@ -53,7 +55,7 @@ class MasterHandlerWorker : HandlerWorker {
                 name = name,
                 executor = { url ->
                     val response = MalinkaProxy(url).download(fragment)
-                    ok().accessControlAllowOrigin()
+                    ok().withDefaultHeader()
                             .contentType(MediaType.parseMediaType("application/vnd.apple.mpegurl"))
                             .writeByteContent(response)
                 }
@@ -66,7 +68,7 @@ class MasterHandlerWorker : HandlerWorker {
                 name = name,
                 executor = { url ->
                     val response = MalinkaProxy(url).download(fragment)
-                    ok().accessControlAllowOrigin()
+                    ok().withDefaultHeader()
                             .contentType(MediaType.parseMediaType("video/mp2t"))
                             .writeByteContent(response)
                 }
@@ -78,6 +80,7 @@ class MasterHandlerWorker : HandlerWorker {
             executor: (String) -> Mono<ServerResponse>): Mono<ServerResponse> {
         val url = streamsMap[name]?.baseUrl ?:
                 return status(HttpStatus.NOT_FOUND)
+                        .withDefaultHeader()
                         .jsonFail(ErrorResponse("Not Found", "No stream with such name!"))
 
         return executor(url)
