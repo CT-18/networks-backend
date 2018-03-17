@@ -19,7 +19,7 @@ class Routes {
         "/streams".nest {
             GET("/", handler::getStreams)
 
-            GET("/{name}/{fragment}", handler::getFragment)
+            GET("/{fragment}", handler::getFragment)
         }
     }
 }

@@ -13,3 +13,6 @@ fun <T> ServerResponse.BodyBuilder.json(value: T): Mono<ServerResponse> = json()
 fun <T> ServerResponse.BodyBuilder.jsonSuccess(value: T): Mono<ServerResponse> = json(Response(value))
 
 fun ServerResponse.BodyBuilder.jsonFail(errorResponse: ErrorResponse) = json(Response<Unit>(errorResponse))
+
+fun ServerResponse.BodyBuilder.hls(value: String) =
+        contentType(MediaType.parseMediaType("video/mp2t")).body(BodyInserters.fromObject(value))
