@@ -19,7 +19,11 @@ import ru.ifmo.networks.common.handlers.HandlerWorker
 class Handler {
 
     @Autowired
-    lateinit var handlerWorker : HandlerWorker
+    lateinit var handlerWorker: HandlerWorker
+
+    fun malinkaHeartbeat(serverRequest: ServerRequest): Mono<ServerResponse> {
+        return handlerWorker.malinkaHeartbeat(serverRequest)
+    }
 
     fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> {
         return handlerWorker.getStreams(serverRequest)
