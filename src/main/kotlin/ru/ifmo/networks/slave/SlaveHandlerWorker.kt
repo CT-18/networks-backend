@@ -38,8 +38,10 @@ class SlaveHandlerWorker : HandlerWorker {
     override fun getFragment(serverRequest: ServerRequest): Mono<ServerResponse> {
 
         try {
-            val name = serverRequest.pathVariable("name") ?: return ServerResponse.badRequest().build()
-            val fragment = serverRequest.pathVariable("fragment") ?: return ServerResponse.badRequest().build()
+            val name = serverRequest.pathVariable("name") ?:
+                    return ServerResponse.badRequest().withDefaultHeader().build()
+            val fragment = serverRequest.pathVariable("fragment") ?:
+                    return ServerResponse.badRequest().withDefaultHeader().build()
             if (!fragment.endsWith(".m3u8")) {
                 val dirName = createStorage(name)
                 if (Files.exists(dirName.resolve(fragment))) {
