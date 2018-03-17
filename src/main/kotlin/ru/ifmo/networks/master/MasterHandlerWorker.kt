@@ -20,7 +20,7 @@ class MasterHandlerWorker : HandlerWorker {
                     map.update(request.name, SelfClearingMap.StreamBaseUrlAndFragment(request.baseUrl, request.fragment))
                 }
                 .flatMap {
-                    ok().jsonSuccess("Ok")
+                    ok().withDefaultHeader().jsonSuccess("Ok")
                 }
     }
 
