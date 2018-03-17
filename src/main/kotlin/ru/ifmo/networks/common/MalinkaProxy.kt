@@ -1,4 +1,4 @@
-package ru.ifmo.networks.master
+package ru.ifmo.networks.common
 
 import org.apache.commons.io.IOUtils.toByteArray
 import java.net.URL

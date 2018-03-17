@@ -1,4 +1,4 @@
-package ru.ifmo.networks.master
+package ru.ifmo.networks.common
 
 data class Response<T>(
         val result: T?,

@@ -1,10 +1,12 @@
-package ru.ifmo.networks.master.handlers
+package ru.ifmo.networks.common.handlers
 
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.ComponentScan
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import reactor.core.publisher.Mono
+import ru.ifmo.networks.common.handlers.HandlerWorker
 
 /**
  * Handler of requests

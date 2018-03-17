@@ -1,9 +1,9 @@
-package ru.ifmo.networks.master
+package ru.ifmo.networks.common
 
 import org.springframework.context.annotation.Bean
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.router
-import ru.ifmo.networks.master.handlers.Handler
+import ru.ifmo.networks.common.handlers.Handler
 
 /**
  * Routes of server

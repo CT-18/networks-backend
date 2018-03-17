@@ -1,4 +1,4 @@
-package ru.ifmo.networks.master
+package ru.ifmo.networks.common
 
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.BodyInserters
