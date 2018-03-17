@@ -18,7 +18,7 @@ fun ServerResponse.BodyBuilder.writeByteContent(content: ByteArray): Mono<Server
                 .body(BodyInserters.fromObject(content))
 
 fun ServerResponse.BodyBuilder.json(): ServerResponse.BodyBuilder =
-        withDefaultHeader().contentType(MediaType.APPLICATION_JSON_UTF8)
+        contentType(MediaType.APPLICATION_JSON_UTF8)
 
 fun <T> ServerResponse.BodyBuilder.json(value: T): Mono<ServerResponse> = json().body(BodyInserters.fromObject(value))
 
