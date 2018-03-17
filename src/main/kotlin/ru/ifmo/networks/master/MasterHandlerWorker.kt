@@ -9,20 +9,15 @@ import org.springframework.web.reactive.function.server.ServerResponse.*
 import reactor.core.publisher.Mono
 import ru.ifmo.networks.common.*
 import ru.ifmo.networks.common.handlers.HandlerWorker
-import java.util.concurrent.ConcurrentHashMap
 
 class MasterHandlerWorker : HandlerWorker {
 
-    private val streamsMap = ConcurrentHashMap<String, StreamBaseUrlAndFragment>()
-
-    init {
-        streamsMap["petrovich"] = StreamBaseUrlAndFragment("http://10.8.0.3", "live.m3u8") // TODO: remove
-    }
+    private val map = SelfClearingMap()
 
     override fun malinkaHeartbeat(serverRequest: ServerRequest): Mono<ServerResponse> {
         return serverRequest.body(BodyExtractors.toMono(HeartbeatRequest::class.java))
                 .map { request ->
-                    streamsMap[request.name] = StreamBaseUrlAndFragment(request.baseUrl, request.fragment)
+                    map.update(request.name, SelfClearingMap.StreamBaseUrlAndFragment(request.baseUrl, request.fragment))
                 }
                 .flatMap {
                     ok().jsonSuccess("Ok")
@@ -33,9 +28,9 @@ class MasterHandlerWorker : HandlerWorker {
             ok()
                     .withDefaultHeader()
                     .jsonSuccess(StreamsResponse(
-                            streamsMap.toList()
-                                    .map { pair -> StreamInfo(pair.first, pair.second.fragment) }
-                    ))
+                    map.asList()
+                            .map { pair -> StreamInfo(pair.first, pair.second.fragment) }
+            ))
 
     override fun getFragment(serverRequest: ServerRequest): Mono<ServerResponse> {
         val name = serverRequest.pathVariable("name") ?: return badRequest().build()
@@ -78,7 +73,7 @@ class MasterHandlerWorker : HandlerWorker {
     private fun withStreamCheck(
             name: String,
             executor: (String) -> Mono<ServerResponse>): Mono<ServerResponse> {
-        val url = streamsMap[name]?.baseUrl ?:
+        val url = map.getStream(name)?.baseUrl ?:
                 return status(HttpStatus.NOT_FOUND)
                         .withDefaultHeader()
                         .jsonFail(ErrorResponse("Not Found", "No stream with such name!"))
@@ -86,5 +81,4 @@ class MasterHandlerWorker : HandlerWorker {
         return executor(url)
     }
 
-    private data class StreamBaseUrlAndFragment(val baseUrl: String, val fragment: String)
 }
