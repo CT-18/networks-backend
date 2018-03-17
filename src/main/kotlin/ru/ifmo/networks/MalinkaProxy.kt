@@ -1,7 +1,6 @@
 package ru.ifmo.networks
 
-import com.google.common.io.CharStreams
-import java.io.InputStreamReader
+import org.apache.commons.io.IOUtils.toByteArray
 import java.net.URL
 
 //import net.chrislongo.hls.PlaylistDownloader;
@@ -9,12 +8,12 @@ import java.net.URL
 
 class MalinkaProxy(private val baseUrl: String) {
 
-    fun download(fragment: String): String {
+    fun download(fragment: String): ByteArray {
         System.out.println("Loading: $fragment")
         return download(URL("$baseUrl/$fragment"))
     }
 
-    private fun download(url: URL): String {
-        return CharStreams.toString(InputStreamReader(url.openStream()))
+    private fun download(url: URL): ByteArray {
+        return toByteArray(url.openStream())
     }
 }

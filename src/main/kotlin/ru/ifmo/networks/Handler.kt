@@ -37,14 +37,13 @@ class Handler {
         assert(fragment.endsWith(".m3u8"))
 
         val response = MalinkaProxy("http://10.8.0.3/").download(fragment)
-        val contentLength = calculateContentLength(response)
 
         return ok()
                 .header("Accept-Ranges", "bytes")
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Expose-Headers", "Content-Length")
                 .contentType(MediaType.parseMediaType("application/vnd.apple.mpegurl"))
-                .contentLength(contentLength)
+                .contentLength(response.size.toLong())
                 .hls(response)
     }
 
@@ -52,14 +51,13 @@ class Handler {
         assert(fragment.endsWith(".ts"))
 
         val response = MalinkaProxy("http://10.8.0.3/").download(fragment)
-        val contentLength = calculateContentLength(response)
 
         return ok()
                 .header("Accept-Ranges", "bytes")
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Expose-Headers", "Content-Length")
                 .contentType(MediaType.parseMediaType("video/mp2t"))
-                .contentLength(contentLength)
+                .contentLength(response.size.toLong())
                 .hls(response)
     }
 

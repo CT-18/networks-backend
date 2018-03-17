@@ -14,5 +14,5 @@ fun <T> ServerResponse.BodyBuilder.jsonSuccess(value: T): Mono<ServerResponse> =
 
 fun ServerResponse.BodyBuilder.jsonFail(errorResponse: ErrorResponse) = json(Response<Unit>(errorResponse))
 
-fun ServerResponse.BodyBuilder.hls(value: String) =
+fun ServerResponse.BodyBuilder.hls(value: ByteArray) =
         body(BodyInserters.fromObject(value))

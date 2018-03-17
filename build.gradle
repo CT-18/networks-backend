@@ -38,6 +38,7 @@ dependencies {
     implementation group: 'com.comcast', name:'hlsparserj', version: '1.0.0'
     implementation group: 'org.jclouds.driver', name:'jclouds-bouncycastle', version: '1.5.1'
     implementation group: 'commons-cli', name:'commons-cli', version: '1.2'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.5'
 }
 
 compileKotlin {
