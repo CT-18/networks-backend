@@ -21,7 +21,7 @@ data class ErrorResponse(
 
 data class StreamInfo(
         val name: String,
-        val url: String
+        val fragment: String
 )
 
 data class StreamsResponse(
