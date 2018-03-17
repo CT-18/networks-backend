@@ -25,9 +25,13 @@ class SlaveHandlerWorker : HandlerWorker {
         try {
             val restTemplate = RestTemplate()
             val result = restTemplate.getForObject("${masterURL}/streams", SomeResponse::class.java)
-            return ServerResponse.ok().jsonSuccess(result.result)
+            return ServerResponse.ok()
+                    .accessControlAllowOrigin()
+                    .jsonSuccess(result.result)
         } catch (e: ResourceAccessException) {
-            return ServerResponse.badRequest().build()
+            return ServerResponse.badRequest()
+                    .accessControlAllowOrigin()
+                    .build()
         }
     }
 
@@ -47,7 +51,9 @@ class SlaveHandlerWorker : HandlerWorker {
             return queryDataFromMaster(name, fragment)
 
         } catch (e: ResourceAccessException) {
-            return ServerResponse.badRequest().build()
+            return ServerResponse.badRequest()
+                    .accessControlAllowOrigin()
+                    .build()
         }
 
     }
@@ -57,7 +63,9 @@ class SlaveHandlerWorker : HandlerWorker {
         val response = restTemplate.exchange("${masterURL}/streams/${name}/${fragment}", HttpMethod.GET, null, ByteArray::class.java)
 
         if (response.statusCode != HttpStatus.OK) {
-            return ServerResponse.badRequest().build()
+            return ServerResponse.badRequest()
+                    .accessControlAllowOrigin()
+                    .build()
         } else {
 
             if (!fragment.endsWith(".m3u8")) {

@@ -4,6 +4,7 @@ import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import reactor.core.publisher.Mono
+import ru.ifmo.networks.common.accessControlAllowOrigin
 import ru.ifmo.networks.common.jsonSuccess
 import java.io.InputStreamReader
 import java.util.*
@@ -17,5 +18,7 @@ class BalancerHandler {
     private val rnd = Random()
 
     fun getNodeUrl(serverRequest: ServerRequest): Mono<ServerResponse> =
-            ServerResponse.ok().jsonSuccess(mapOf("result" to urls.filter { t -> t.second }.shuffled().firstOrNull()?.first))
+            ServerResponse.ok()
+                    .accessControlAllowOrigin()
+                    .jsonSuccess(mapOf("result" to urls.filter { t -> t.second }.shuffled().firstOrNull()?.first))
 }
