@@ -1,30 +1,22 @@
-package ru.ifmo.networks
+package ru.ifmo.networks.master.handlers
 
 import org.springframework.http.MediaType
-import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
-import org.springframework.web.reactive.function.server.ServerResponse.badRequest
-import org.springframework.web.reactive.function.server.ServerResponse.ok
 import reactor.core.publisher.Mono
+import ru.ifmo.networks.*
+import ru.ifmo.networks.master.*
 import java.nio.charset.Charset
 
-/**
- * Handler of requests
- *
- * @author Danil Kolikov
- */
-@Component
-class Handler {
-
-    fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> =
-            ok().jsonSuccess(StreamsResponse(listOf(
+class MasterHandlerWorker() : HandlerWorker {
+    override fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> =
+            ServerResponse.ok().jsonSuccess(StreamsResponse(listOf(
                     StreamInfo("petrovich", "http://10.8.0.3/live.m3u8")
             )))
 
-    fun getFragment(serverRequest: ServerRequest): Mono<ServerResponse> {
-        val name = serverRequest.pathVariable("name") ?: return badRequest().build()
-        val fragment = serverRequest.pathVariable("fragment") ?: return badRequest().build()
+    override fun getFragment(serverRequest: ServerRequest): Mono<ServerResponse> {
+        val name = serverRequest.pathVariable("name") ?: return ServerResponse.badRequest().build()
+        val fragment = serverRequest.pathVariable("fragment") ?: return ServerResponse.badRequest().build()
 
         if (fragment.endsWith(".m3u8")) {
             return getM3U8Fragment(name, fragment)
@@ -38,7 +30,7 @@ class Handler {
 
         val response = MalinkaProxy("http://10.8.0.3/").download(fragment)
 
-        return ok()
+        return ServerResponse.ok()
                 .header("Accept-Ranges", "bytes")
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Expose-Headers", "Content-Length")
@@ -52,7 +44,7 @@ class Handler {
 
         val response = MalinkaProxy("http://10.8.0.3/").download(fragment)
 
-        return ok()
+        return ServerResponse.ok()
                 .header("Accept-Ranges", "bytes")
                 .header("Access-Control-Allow-Origin", "*")
                 .header("Access-Control-Expose-Headers", "Content-Length")
