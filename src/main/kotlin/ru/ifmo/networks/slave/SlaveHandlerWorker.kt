@@ -1,5 +1,6 @@
 package ru.ifmo.networks.slave
 
+import com.sun.security.ntlm.Server
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.server.ServerRequest
@@ -11,6 +12,9 @@ import org.springframework.web.client.RestTemplate
 import org.springframework.http.HttpMethod
 import org.springframework.web.client.ResourceAccessException
 import java.io.InputStreamReader
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 
 
 class SlaveHandlerWorker : HandlerWorker {
@@ -33,23 +37,64 @@ class SlaveHandlerWorker : HandlerWorker {
         try {
             val name = serverRequest.pathVariable("name") ?: return ServerResponse.badRequest().build()
             val fragment = serverRequest.pathVariable("fragment") ?: return ServerResponse.badRequest().build()
-
-            val restTemplate = RestTemplate()
-            val response = restTemplate.exchange("${masterURL}/streams/${name}/${fragment}", HttpMethod.GET, null, ByteArray::class.java)
-
-            if (response.statusCode != HttpStatus.OK) {
-                return ServerResponse.badRequest().build()
-            } else {
-                return ServerResponse.ok().accessControlAllowOrigin()
-                        .contentType(MediaType.parseMediaType("video/mp2t"))
-                        .writeByteContent(response.body)
+            if (!fragment.endsWith(".m3u8")) {
+                val dirName = createStorage(name)
+                if (Files.exists(dirName.resolve(fragment))) {
+                    return fragmentResponse(Files.readAllBytes(dirName.resolve(fragment)))
+                }
             }
+
+            return queryDataFromMaster(name, fragment)
+
         } catch (e: ResourceAccessException) {
             return ServerResponse.badRequest().build()
         }
 
     }
 
+    private fun queryDataFromMaster(name : String, fragment: String) : Mono<ServerResponse> {
+        val restTemplate = RestTemplate()
+        val response = restTemplate.exchange("${masterURL}/streams/${name}/${fragment}", HttpMethod.GET, null, ByteArray::class.java)
+
+        if (response.statusCode != HttpStatus.OK) {
+            return ServerResponse.badRequest().build()
+        } else {
+
+            if (!fragment.endsWith(".m3u8")) {
+                val dirName = createStorage(name)
+                Files.newOutputStream(dirName.resolve(fragment)).use {
+                    it.write(response.body)
+                }
+                return fragmentResponse(response.body)
+
+            } else {
+                return ServerResponse.ok().accessControlAllowOrigin()
+                        .contentType(MediaType.parseMediaType("application/vnd.apple.mpegurl"))
+                        .writeByteContent(response.body)
+            }
+        }
+    }
+
+    private fun fragmentResponse(data : ByteArray) : Mono<ServerResponse> {
+        return ServerResponse.ok().accessControlAllowOrigin()
+                .contentType(MediaType.parseMediaType("video/mp2t"))
+                .writeByteContent(data)
+    }
+
+    private fun createStorage(name : String) : Path {
+        var path = Paths.get(name)
+        if (Files.isDirectory(path)) return path
+        if (!Files.exists(path)) return Files.createDirectory(path)
+
+        var i = 0
+        while (i < 255) {
+            path = Paths.get("${name}${i++}")
+            if (Files.isDirectory(path)) return path
+            if (!Files.exists(path)) return Files.createDirectory(path)
+        }
+
+        throw IllegalStateException("Can't create directory for ${name}")
+    }
 
     class SomeResponse(result: StreamsResponse) : Response<StreamsResponse>(result)
 
