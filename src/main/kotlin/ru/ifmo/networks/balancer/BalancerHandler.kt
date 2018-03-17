@@ -17,5 +17,5 @@ class BalancerHandler {
     private val rnd = Random()
 
     fun getNodeUrl(serverRequest: ServerRequest): Mono<ServerResponse> =
-            ServerResponse.ok().jsonSuccess(mapOf("result" to urls.filter { t -> t.second }.shuffled().firstOrNull()))
+            ServerResponse.ok().jsonSuccess(mapOf("result" to urls.filter { t -> t.second }.shuffled().firstOrNull()?.first))
 }
