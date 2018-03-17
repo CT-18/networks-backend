@@ -1,32 +1,26 @@
-package ru.ifmo.networks
+package ru.ifmo.networks.master.handlers
 
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.ServerResponse.*
 import reactor.core.publisher.Mono
+import ru.ifmo.networks.master.*
 
-/**
- * Handler of requests
- *
- * @author Danil Kolikov
- */
-@Component
-class Handler {
+class MasterHandlerWorker : HandlerWorker {
 
     val streamsMap = mapOf(
             "petrovich" to StreamBaseUrlAndFragment("http://10.8.0.3", "live.m3u8")
     )
 
-    fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> =
+    override fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> =
             ok().jsonSuccess(StreamsResponse(
                     streamsMap.toList()
                             .map { pair -> StreamInfo(pair.first, pair.second.fragment) }
             ))
 
-    fun getFragment(serverRequest: ServerRequest): Mono<ServerResponse> {
+    override fun getFragment(serverRequest: ServerRequest): Mono<ServerResponse> {
         val name = serverRequest.pathVariable("name") ?: return badRequest().build()
         val fragment = serverRequest.pathVariable("fragment") ?: return badRequest().build()
 
