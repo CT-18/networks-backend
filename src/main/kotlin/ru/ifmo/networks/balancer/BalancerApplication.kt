@@ -14,6 +14,7 @@ class BalancerApplication
 
 object BalancerRunner {
     fun run(args: Array<String>) {
+        BalancerHandler.urls = args.toList().subList(1, args.size)
         runApplication<BalancerApplication>(*args)
     }
 }

@@ -15,6 +15,7 @@ class SlaveApplication
 object SlaveRunner {
     fun run(args: Array<String>) {
         AppConfig.isSlave = true
+        SlaveHandlerWorker.masterURL = args[1]
         runApplication<SlaveApplication>(*args)
     }
 }

@@ -12,13 +12,14 @@ import java.util.*
 @Component
 class BalancerHandler {
 
-    private val urls = InputStreamReader(Thread.currentThread().contextClassLoader.
-            getResourceAsStream("slaves.txt")).readLines().map { t -> Pair(t, true) }
+    companion object {
+        var urls = listOf<String>()
+    }
 
     private val rnd = Random()
 
     fun getNodeUrl(serverRequest: ServerRequest): Mono<ServerResponse> =
             ServerResponse.ok()
                     .withDefaultHeader()
-                    .jsonSuccess(mapOf("result" to urls.filter { t -> t.second }.shuffled().firstOrNull()?.first))
+                    .jsonSuccess(mapOf("result" to urls.shuffled().firstOrNull()))
 }

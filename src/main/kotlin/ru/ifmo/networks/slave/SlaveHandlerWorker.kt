@@ -18,7 +18,9 @@ import java.nio.file.Paths
 
 class SlaveHandlerWorker : HandlerWorker {
 
-    private val masterURL = InputStreamReader(Thread.currentThread().contextClassLoader.getResourceAsStream("master.txt")).readText()
+    companion object {
+        var masterURL = ""
+    }
 
     override fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> {
         return try {

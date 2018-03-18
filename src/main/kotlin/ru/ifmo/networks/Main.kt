@@ -5,7 +5,7 @@ import ru.ifmo.networks.master.MasterRunner
 import ru.ifmo.networks.slave.SlaveRunner
 
 fun main(args: Array<String>) {
-    when (args[0]) {
+    when (args[0].toLowerCase()) {
         "master" -> MasterRunner.run(args)
         "slave" -> SlaveRunner.run(args)
         "balancer" -> BalancerRunner.run(args)

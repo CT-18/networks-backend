@@ -12,7 +12,7 @@ class BalancerRoutes {
     fun balancerRouter(
             handler: BalancerHandler
     ) = router {
-        "/balancer/".nest {
+        "/balancer".nest {
             GET("/", handler::getNodeUrl)
         }
     }
