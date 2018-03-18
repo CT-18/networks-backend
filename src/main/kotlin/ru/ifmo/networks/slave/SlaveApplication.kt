@@ -12,8 +12,9 @@ import ru.ifmo.networks.master.MasterHandlerWorker
 @SpringBootApplication(scanBasePackages = ["ru.ifmo.networks.common"])
 class SlaveApplication
 
-
-fun main(args: Array<String>) {
-    AppConfig.isSlave = true
-    runApplication<SlaveApplication>(*args)
+object SlaveRunner {
+    fun run(args: Array<String>) {
+        AppConfig.isSlave = true
+        runApplication<SlaveApplication>(*args)
+    }
 }
