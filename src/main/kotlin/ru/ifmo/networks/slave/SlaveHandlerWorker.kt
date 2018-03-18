@@ -21,14 +21,14 @@ class SlaveHandlerWorker : HandlerWorker {
     private val masterURL = InputStreamReader(Thread.currentThread().contextClassLoader.getResourceAsStream("master.txt")).readText()
 
     override fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> {
-        try {
+        return try {
             val restTemplate = RestTemplate()
-            val result = restTemplate.getForObject("${masterURL}/streams", SomeResponse::class.java)
-            return ServerResponse.ok()
+            val result = restTemplate.getForObject("$masterURL/streams", SomeResponse::class.java)
+            ServerResponse.ok()
                     .withDefaultHeader()
                     .jsonSuccess(result.result)
         } catch (e: ResourceAccessException) {
-            return ServerResponse.badRequest()
+            ServerResponse.badRequest()
                     .withDefaultHeader()
                     .build()
         }
@@ -61,25 +61,23 @@ class SlaveHandlerWorker : HandlerWorker {
 
     private fun queryDataFromMaster(name: String, fragment: String): Mono<ServerResponse> {
         val restTemplate = RestTemplate()
-        val response = restTemplate.exchange("${masterURL}/streams/${name}/${fragment}", HttpMethod.GET, null, ByteArray::class.java)
+        val response = restTemplate.exchange("$masterURL/streams/$name/$fragment", HttpMethod.GET, null, ByteArray::class.java)
 
         if (response.statusCode != HttpStatus.OK) {
             return ServerResponse.badRequest()
                     .withDefaultHeader()
                     .build()
         } else {
-
-            if (!fragment.endsWith(".m3u8")) {
+            return if (!fragment.endsWith(".m3u8")) {
                 val dirName = createStorage(name)
                 Files.newOutputStream(dirName.resolve(fragment)).use {
                     it.write(response.body)
                 }
-                return fragmentResponse(response.body)
-
+                fragmentResponse(response.body!!)
             } else {
-                return ServerResponse.ok().withDefaultHeader()
+                ServerResponse.ok().withDefaultHeader()
                         .contentType(MediaType.parseMediaType("application/vnd.apple.mpegurl"))
-                        .writeByteContent(response.body)
+                        .writeByteContent(response.body!!)
             }
         }
     }
@@ -97,12 +95,12 @@ class SlaveHandlerWorker : HandlerWorker {
 
         var i = 0
         while (i < 255) {
-            path = Paths.get("${name}${i++}")
+            path = Paths.get("$name${i++}")
             if (Files.isDirectory(path)) return path
             if (!Files.exists(path)) return Files.createDirectory(path)
         }
 
-        throw IllegalStateException("Can't create directory for ${name}")
+        throw IllegalStateException("Can't create directory for $name")
     }
 
     class SomeResponse(result: StreamsResponse) : Response<StreamsResponse>(result)

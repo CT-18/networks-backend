@@ -12,7 +12,8 @@ import ru.ifmo.networks.master.MasterHandlerWorker
 @SpringBootApplication
 class BalancerApplication
 
-
-fun main(args: Array<String>) {
-    runApplication<BalancerApplication>(*args)
+object BalancerRunner {
+    fun run(args: Array<String>) {
+        runApplication<BalancerApplication>(*args)
+    }
 }
