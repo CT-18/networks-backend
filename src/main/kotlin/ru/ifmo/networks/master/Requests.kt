@@ -1,3 +1,4 @@
 package ru.ifmo.networks.master
 
-data class HeartbeatRequest(val baseUrl: String, val name: String, val fragment: String)
+data class HeartbeatRequest(val name: String, val fragment: String)
+data class WithIP<T>(val ip : String, val data : T)

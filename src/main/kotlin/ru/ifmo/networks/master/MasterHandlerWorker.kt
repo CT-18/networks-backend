@@ -15,22 +15,31 @@ class MasterHandlerWorker : HandlerWorker {
     private val map = SelfClearingMap()
 
     override fun malinkaHeartbeat(serverRequest: ServerRequest): Mono<ServerResponse> {
-        return serverRequest.body(BodyExtractors.toMono(HeartbeatRequest::class.java))
-                .map { request ->
-                    map.update(request.name, SelfClearingMap.StreamBaseUrlAndFragment(request.baseUrl, request.fragment))
+        return serverRequest.body({ httpRequest, context ->
+            val ip = httpRequest.remoteAddress?.address?.hostAddress ?: return@body Mono.empty<WithIP<HeartbeatRequest>>()
+            val request = BodyExtractors.toMono(HeartbeatRequest::class.java).extract(httpRequest, context)
+            request.map { WithIP(ip, it) }
+        })
+                .map { requestWithIp ->
+                    val request = requestWithIp.data
+                    val url = "rtmp://${requestWithIp.ip}"
+                    map.update(request.name, SelfClearingMap.StreamBaseUrlAndFragment(url, request.fragment))
                 }
                 .flatMap {
                     ok().withDefaultHeader().jsonSuccess("Ok")
                 }
+                .switchIfEmpty(
+                    badRequest().jsonFail(ErrorResponse("Address unresolved", "Address unresolved"))
+                )
     }
 
     override fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> =
             ok()
                     .withDefaultHeader()
                     .jsonSuccess(StreamsResponse(
-                    map.asList()
-                            .map { pair -> StreamInfo(pair.first, pair.second.fragment) }
-            ))
+                            map.asList()
+                                    .map { pair -> StreamInfo(pair.first, pair.second.fragment) }
+                    ))
 
     override fun getFragment(serverRequest: ServerRequest): Mono<ServerResponse> {
         val name = serverRequest.pathVariable("name") ?: return badRequest().build()
