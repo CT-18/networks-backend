@@ -6,19 +6,64 @@ import org.springframework.web.reactive.function.server.ServerResponse
 import reactor.core.publisher.Mono
 import ru.ifmo.networks.common.jsonSuccess
 import ru.ifmo.networks.common.withDefaultHeader
+import java.net.InetSocketAddress
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.max
 
 @Component
 class BalancerHandler {
 
     companion object {
-        var urls = listOf<String>()
+        private var urls = ConcurrentHashMap<String, Long>()
         private val rnd = Random()
+        var cleaningPeriodInMillis: Long = 30_000
     }
 
-    fun getNodeUrl(serverRequest: ServerRequest): Mono<ServerResponse> =
+    private fun filterDeadUrls() {
+        urls.forEach(urls.size.toLong()) { addr, lastUpdate ->
+            if (Date().time - lastUpdate > cleaningPeriodInMillis) {
+                urls.remove(addr, lastUpdate)
+            }
+        }
+    }
+
+    fun getNodeUrl(serverRequest: ServerRequest): Mono<ServerResponse> {
+        filterDeadUrls()
+        val res = urls.keys.toList().getOrNull(rnd.nextInt(max(1, urls.size)))
+        return if (res == null) {
+            ServerResponse.notFound().build()
+        } else {
             ServerResponse.ok()
                     .withDefaultHeader()
-                    .jsonSuccess(mapOf("result" to urls.getOrNull(rnd.nextInt(max(1, urls.size)))))
+                    .jsonSuccess(mapOf("result" to res))
+        }
+    }
+
+    fun heartBeat(serverRequest: ServerRequest): Mono<ServerResponse> {
+        val slaveAddr = (serverRequest.attribute("request-ip").get() as InetSocketAddress)
+                .address.hostAddress
+        //println("received heartbeat from $slaveAddr")
+
+        val lastUpdate = urls[slaveAddr]
+        val result = if (lastUpdate != null) {
+            "update"
+        } else {
+            "register"
+        }
+        val newTime = Date().time
+        urls[slaveAddr] = newTime
+        val lastUpdateDesc = if (lastUpdate == null) {
+            "never"
+        } else {
+            "${((newTime - lastUpdate) / 1000)} seconds ago"
+        }
+        return ServerResponse.ok()
+                .withDefaultHeader()
+                .jsonSuccess(mapOf(
+                        "result" to result,
+                        "last update" to lastUpdateDesc,
+                        "slave address" to slaveAddr,
+                        "heartbeat period in millis" to cleaningPeriodInMillis))
+    }
 }

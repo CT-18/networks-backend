@@ -1,16 +1,15 @@
 package ru.ifmo.networks.slave
 
+import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.web.client.ResourceAccessException
+import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import reactor.core.publisher.Mono
 import ru.ifmo.networks.common.*
 import ru.ifmo.networks.common.handlers.HandlerWorker
-import org.springframework.web.client.RestTemplate
-import org.springframework.http.HttpMethod
-import org.springframework.web.client.ResourceAccessException
-import java.io.InputStreamReader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -25,7 +24,7 @@ class SlaveHandlerWorker : HandlerWorker {
     override fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> {
         return try {
             val restTemplate = RestTemplate()
-            val result = restTemplate.getForObject("$masterURL/streams", SomeResponse::class.java)
+            val result = restTemplate.getForObject("$masterURL/streams", SomeResponse::class.java)!!
             ServerResponse.ok()
                     .withDefaultHeader()
                     .jsonSuccess(result.result)
@@ -35,7 +34,6 @@ class SlaveHandlerWorker : HandlerWorker {
                     .build()
         }
     }
-
 
     override fun getFragment(serverRequest: ServerRequest): Mono<ServerResponse> {
 
