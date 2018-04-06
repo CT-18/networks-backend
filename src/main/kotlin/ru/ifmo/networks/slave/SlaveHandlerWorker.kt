@@ -10,12 +10,21 @@ import org.springframework.web.reactive.function.server.ServerResponse
 import reactor.core.publisher.Mono
 import ru.ifmo.networks.common.*
 import ru.ifmo.networks.common.handlers.HandlerWorker
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.Paths
-
+import ru.ifmo.networks.common.storage.DiskStorage
+import ru.ifmo.networks.common.storage.LruStorage
+import ru.ifmo.networks.common.storage.Storage
 
 class SlaveHandlerWorker : HandlerWorker {
+
+    private val storage: Storage
+
+    init {
+        storage = LruStorage(60,
+                DiskStorage(
+                        MasterStorage(masterURL)
+                )
+        )
+    }
 
     companion object {
         var masterURL = ""
@@ -42,65 +51,37 @@ class SlaveHandlerWorker : HandlerWorker {
                     return ServerResponse.badRequest().withDefaultHeader().build()
             val fragment = serverRequest.pathVariable("fragment") ?:
                     return ServerResponse.badRequest().withDefaultHeader().build()
-            if (!fragment.endsWith(".m3u8")) {
-                val dirName = createStorage(name)
-                if (Files.exists(dirName.resolve(fragment))) {
-                    return fragmentResponse(Files.readAllBytes(dirName.resolve(fragment)))
-                }
+            return if (!fragment.endsWith(".m3u8")) {
+                fragmentResponse(storage.getFragment(StreamInfo(name, fragment)), "video/mp2t")
+            } else {
+                queryM3U8FromMaster(name, fragment)
             }
-
-            return queryDataFromMaster(name, fragment)
-
         } catch (e: ResourceAccessException) {
-            return ServerResponse.badRequest()
-                    .withDefaultHeader()
-                    .build()
+            return fragmentResponse(null, "")
         }
 
     }
 
-    private fun queryDataFromMaster(name: String, fragment: String): Mono<ServerResponse> {
+    private fun queryM3U8FromMaster(name: String, fragment: String): Mono<ServerResponse> {
         val restTemplate = RestTemplate()
         val response = restTemplate.exchange("$masterURL/streams/$name/$fragment", HttpMethod.GET, null, ByteArray::class.java)
 
-        if (response.statusCode != HttpStatus.OK) {
-            return ServerResponse.badRequest()
+        return fragmentResponse(
+                if (response.statusCode != HttpStatus.OK) null else response.body,
+                "application/vnd.apple.mpegurl"
+        )
+    }
+
+    private fun fragmentResponse(data: ByteArray?, mediaType: String): Mono<ServerResponse> {
+        return if (data == null) {
+            ServerResponse.badRequest()
                     .withDefaultHeader()
                     .build()
         } else {
-            return if (!fragment.endsWith(".m3u8")) {
-                val dirName = createStorage(name)
-                Files.newOutputStream(dirName.resolve(fragment)).use {
-                    it.write(response.body)
-                }
-                fragmentResponse(response.body!!)
-            } else {
-                ServerResponse.ok().withDefaultHeader()
-                        .contentType(MediaType.parseMediaType("application/vnd.apple.mpegurl"))
-                        .writeByteContent(response.body!!)
-            }
+            ServerResponse.ok().withDefaultHeader()
+                    .contentType(MediaType.parseMediaType(mediaType))
+                    .writeByteContent(data)
         }
-    }
-
-    private fun fragmentResponse(data: ByteArray): Mono<ServerResponse> {
-        return ServerResponse.ok().withDefaultHeader()
-                .contentType(MediaType.parseMediaType("video/mp2t"))
-                .writeByteContent(data)
-    }
-
-    private fun createStorage(name: String): Path {
-        var path = Paths.get(name)
-        if (Files.isDirectory(path)) return path
-        if (!Files.exists(path)) return Files.createDirectory(path)
-
-        var i = 0
-        while (i < 255) {
-            path = Paths.get("$name${i++}")
-            if (Files.isDirectory(path)) return path
-            if (!Files.exists(path)) return Files.createDirectory(path)
-        }
-
-        throw IllegalStateException("Can't create directory for $name")
     }
 
     class SomeResponse(result: StreamsResponse) : Response<StreamsResponse>(result)
