@@ -1,0 +1,15 @@
+version: '3'
+services:
+  master:
+    image: cdn-system
+    hostname: cdn-master
+    container_name: cdn-master
+    ports:
+      - 8080:8080
+    command: 'master'
+
+  slave:
+    image: cdn-system
+    ports:
+      - 8080
+    command: ["slave", "http://cdn-master:8080"]
