@@ -44,7 +44,7 @@ class BalancerHandler {
         val slaveAddr = (serverRequest.attribute("request-ip").get() as InetSocketAddress)
                 .address.hostAddress
         val slavePort = serverRequest.queryParam("port").orElse("9000")
-        val address = "$slaveAddr:$slavePort"
+        val address = "http://$slaveAddr:$slavePort"
 
         val lastUpdate = urls[address]
         val result = if (lastUpdate != null) {
