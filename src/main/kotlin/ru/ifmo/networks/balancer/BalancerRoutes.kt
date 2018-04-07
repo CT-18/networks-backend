@@ -6,7 +6,6 @@ import org.springframework.web.reactive.function.server.router
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebFilter
 import org.springframework.web.server.WebFilterChain
-import ru.ifmo.networks.common.handlers.Handler
 
 @Component
 class BalancerRoutes {
