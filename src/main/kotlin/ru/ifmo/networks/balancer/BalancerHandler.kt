@@ -43,16 +43,17 @@ class BalancerHandler {
     fun heartBeat(serverRequest: ServerRequest): Mono<ServerResponse> {
         val slaveAddr = (serverRequest.attribute("request-ip").get() as InetSocketAddress)
                 .address.hostAddress
-        //println("received heartbeat from $slaveAddr")
+        val slavePort = serverRequest.queryParam("port").orElse("9000")
+        val address = "$slaveAddr:$slavePort"
 
-        val lastUpdate = urls[slaveAddr]
+        val lastUpdate = urls[address]
         val result = if (lastUpdate != null) {
             "update"
         } else {
             "register"
         }
         val newTime = Date().time
-        urls[slaveAddr] = newTime
+        urls[address] = newTime
         val lastUpdateDesc = if (lastUpdate == null) {
             "never"
         } else {
