@@ -8,7 +8,8 @@ import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
 class MalinkaStorage(private val urlExtractor: (String) -> String?,
-                     private val durationCallback: (Duration, StreamInfo) -> Unit)
+                     private val durationCallback: (Duration, StreamInfo) -> Unit,
+                     private val fallback: Storage)
     : Storage {
 
     private val lastStreamInfo = ConcurrentHashMap<String, StreamInfo>()
@@ -16,6 +17,7 @@ class MalinkaStorage(private val urlExtractor: (String) -> String?,
     override fun getFragment(streamInfo: StreamInfo): ByteArray? {
         return urlExtractor(streamInfo.name)?.let {
             try {
+                println("I'm fair")
                 val before = Clock.systemUTC().instant()
                 val download = MalinkaProxy(it).download(streamInfo.fragment)
                 val after = Clock.systemUTC().instant()
@@ -26,7 +28,8 @@ class MalinkaStorage(private val urlExtractor: (String) -> String?,
                 null
             }
         } ?: if (lastStreamInfo[streamInfo.name] != streamInfo) {
-            getFragment(lastStreamInfo[streamInfo.name]!!)
+            println("I'm cheating")
+            fallback.getFragment(lastStreamInfo[streamInfo.name]!!)
         } else null
     }
 }

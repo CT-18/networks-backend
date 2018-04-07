@@ -12,7 +12,7 @@ class MalinkaProxy(private val baseUrl: String) {
 
     private fun download(url: URL): ByteArray {
         val connection = url.openConnection()
-        connection.connectTimeout = 10000
+        connection.connectTimeout = 4000
         return toByteArray(connection.getInputStream())
     }
 }

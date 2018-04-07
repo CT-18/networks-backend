@@ -1,9 +1,7 @@
 package ru.ifmo.networks.master
 
-import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.BodyExtractors
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
@@ -19,7 +17,7 @@ import java.time.Duration
 class MasterHandlerWorker : HandlerWorker {
 
     companion object {
-        private val FRAGMENT_DURATION = Duration.ofSeconds(1)
+        private val FRAGMENT_DURATION = Duration.ofSeconds(2)
     }
 
     private val map = SelfClearingMap()
@@ -27,6 +25,12 @@ class MasterHandlerWorker : HandlerWorker {
     private val storage: Storage
 
     init {
+        var tmp: Storage? = null
+        val fallback = object: Storage {
+            override fun getFragment(streamInfo: StreamInfo): ByteArray? {
+                return tmp!!.getFragment(streamInfo)
+            }
+        }
         storage = LruStorage(60,
                 DiskStorage(
                         MalinkaStorage({
@@ -35,12 +39,14 @@ class MasterHandlerWorker : HandlerWorker {
                             if (duration > FRAGMENT_DURATION) {
                                 reportSlowSpeed(duration, streamInfo)
                             }
-                        })
+                        }, fallback)
                 )
         )
+        tmp = storage
     }
 
     override fun malinkaHeartbeat(serverRequest: ServerRequest): Mono<ServerResponse> {
+        println("malinkaHeartbeat $serverRequest")
         return serverRequest
                 .body { httpRequest, context ->
                     val ip = httpRequest.remoteAddress?.address?.hostAddress
@@ -63,15 +69,18 @@ class MasterHandlerWorker : HandlerWorker {
                 )
     }
 
-    override fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> =
-            ok()
-                    .withDefaultHeader()
-                    .jsonSuccess(StreamsResponse(
-                            map.asList()
-                                    .map { pair -> StreamInfo(pair.first, pair.second.fragment) }
-                    ))
+    override fun getStreams(serverRequest: ServerRequest): Mono<ServerResponse> {
+        println("getStreams $serverRequest")
+        return ok()
+                .withDefaultHeader()
+                .jsonSuccess(StreamsResponse(
+                        map.asList()
+                                .map { pair -> StreamInfo(pair.first, pair.second.fragment) }
+                ))
+    }
 
     override fun getFragment(serverRequest: ServerRequest): Mono<ServerResponse> {
+        println("getFragment $serverRequest")
         val name = serverRequest.pathVariable("name") ?: return badRequest().build()
         val fragment = serverRequest.pathVariable("fragment") ?: return badRequest().build()
 
@@ -121,16 +130,18 @@ class MasterHandlerWorker : HandlerWorker {
     }
 
     private fun reportSlowSpeed(duration: Duration, streamInfo: StreamInfo) {
-        val restTemplate = RestTemplate()
-        val status = restTemplate.exchange(
-                "${map.getStream(streamInfo.name)?.baseUrl}/bandwith",
-                HttpMethod.POST,
-                null,
-                String::class.java)
-        if (status.statusCode != HttpStatus.OK) {
-            println("лолчто")
-        }
-        map.remove(streamInfo.name)
+        println("slow speed, duration $duration")
+
+//        val restTemplate = RestTemplate()
+//        val status = restTemplate.exchange(
+//                "${map.getStream(streamInfo.name)?.baseUrl}/bandwidth",
+//                HttpMethod.POST,
+//                null,
+//                String::class.java)
+//        if (status.statusCode != HttpStatus.OK) {
+//            println("лолчто")
+//        }
+//        map.remove(streamInfo.name)
     }
 
 }
