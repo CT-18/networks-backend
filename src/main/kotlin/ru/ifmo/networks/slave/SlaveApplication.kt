@@ -6,12 +6,8 @@ import ru.ifmo.networks.balancer.BalancerHandler
 import ru.ifmo.networks.common.configuration.AppConfig
 import java.util.*
 import kotlin.concurrent.scheduleAtFixedRate
-import com.sun.jersey.core.header.LinkHeader.uri
-import jdk.nashorn.internal.runtime.ScriptingFunctions.readLine
-import java.io.InputStreamReader
-import java.io.BufferedReader
-import java.net.HttpURLConnection
-import java.net.URL
+import org.springframework.http.HttpMethod
+import org.springframework.web.client.RestTemplate
 
 
 @SpringBootApplication(scanBasePackages = ["ru.ifmo.networks.common"])
@@ -23,28 +19,21 @@ object SlaveRunner {
         SlaveHandlerWorker.masterURL = args[1]
         runApplication<SlaveApplication>(*args)
 
-        val heartbeatPeriodInMillis = if (args.size > 2) {
-            args[2].toLong()
+        val heartbeatPeriodInMillis = if (args.size > 3) {
+            args[3].toLong()
         } else BalancerHandler.cleaningPeriodInMillis / 2
 
         val timer = Timer()
         timer.scheduleAtFixedRate(heartbeatPeriodInMillis, heartbeatPeriodInMillis) {
-            //println("sending heartbeat")
-
-            val obj = URL(SlaveHandlerWorker.masterURL + "/balancer/heartbeat")
-            //println("sending to url ${obj.host}")
-            val connection = obj.openConnection() as HttpURLConnection
-            connection.requestMethod = "GET"
-            val input = BufferedReader(InputStreamReader(connection.inputStream))
-            val response = StringBuffer()
-
-            while (true) {
-                val inputLine = input.readLine() ?: break
-                response.append(inputLine)
+            try {
+                val port = System.getProperty("server.port", "8080") // 8080 -- default Spring server.port
+                val balancerUrl = args[2] + "/balancer/heartbeat?port=$port"
+                val response = RestTemplate().exchange(balancerUrl, HttpMethod.GET, null, String::class.java)
+                println(response.toString())
+            } catch (e: Exception) {
+                println("WTF: $e")
+                e.printStackTrace()
             }
-            input.close()
-
-            println(response.toString())
         }
     }
 }
