@@ -3,9 +3,6 @@ package ru.ifmo.networks.common
 import org.apache.commons.io.IOUtils.toByteArray
 import java.net.URL
 
-//import net.chrislongo.hls.PlaylistDownloader;
-
-
 class MalinkaProxy(private val baseUrl: String) {
 
     fun download(fragment: String): ByteArray {
@@ -14,6 +11,8 @@ class MalinkaProxy(private val baseUrl: String) {
     }
 
     private fun download(url: URL): ByteArray {
-        return toByteArray(url.openStream())
+        val connection = url.openConnection()
+        connection.connectTimeout = 4000
+        return toByteArray(connection.getInputStream())
     }
 }

@@ -53,12 +53,16 @@ class SelfClearingMap {
         return allStreams.toList()
     }
 
+    fun remove(name: String) {
+        allStreams.remove(name)
+        updateTimes.remove(name)
+        writers.remove(name)?.destroy()
+    }
+
     private fun selfClean() {
-        updateTimes.forEach { s, lastSeen ->
+        updateTimes.forEach { name, lastSeen ->
             if (System.currentTimeMillis() - lastSeen > CLEANING_PERIOD) {
-                allStreams.remove(s)
-                updateTimes.remove(s)
-                writers.remove(s)?.destroy()
+                remove(name)
             }
         }
     }
