@@ -1,7 +1,9 @@
 package ru.ifmo.networks.master
 
+import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.function.BodyExtractors
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
@@ -12,8 +14,13 @@ import ru.ifmo.networks.common.handlers.HandlerWorker
 import ru.ifmo.networks.common.storage.DiskStorage
 import ru.ifmo.networks.common.storage.LruStorage
 import ru.ifmo.networks.common.storage.Storage
+import java.time.Duration
 
 class MasterHandlerWorker : HandlerWorker {
+
+    companion object {
+        private val FRAGMENT_DURATION = Duration.ofSeconds(1)
+    }
 
     private val map = SelfClearingMap()
 
@@ -22,9 +29,13 @@ class MasterHandlerWorker : HandlerWorker {
     init {
         storage = LruStorage(60,
                 DiskStorage(
-                        MalinkaStorage {
+                        MalinkaStorage({
                             map.getStream(it)?.baseUrl
-                        }
+                        }, { duration, streamInfo ->
+                            if (duration > FRAGMENT_DURATION) {
+                                reportSlowSpeed(duration, streamInfo)
+                            }
+                        })
                 )
         )
     }
@@ -107,6 +118,19 @@ class MasterHandlerWorker : HandlerWorker {
                         .jsonFail(ErrorResponse("Not Found", "No stream with such name!"))
 
         return executor(url)
+    }
+
+    private fun reportSlowSpeed(duration: Duration, streamInfo: StreamInfo) {
+        val restTemplate = RestTemplate()
+        val status = restTemplate.exchange(
+                "${map.getStream(streamInfo.name)?.baseUrl}/bandwith",
+                HttpMethod.POST,
+                null,
+                String::class.java)
+        if (status.statusCode != HttpStatus.OK) {
+            println("лолчто")
+        }
+        map.remove(streamInfo.name)
     }
 
 }
